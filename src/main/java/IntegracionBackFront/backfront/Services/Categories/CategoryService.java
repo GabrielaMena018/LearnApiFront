@@ -1,6 +1,7 @@
 package IntegracionBackFront.backfront.Services.Categories;
 
 import IntegracionBackFront.backfront.Entities.Categories.CategoryEntity;
+import IntegracionBackFront.backfront.Entities.Products.ProductEntity;
 import IntegracionBackFront.backfront.Exceptions.Category.ExceptionCategoryNotFound;
 import IntegracionBackFront.backfront.Models.DTO.Categories.CategoryDTO;
 import IntegracionBackFront.backfront.Repositories.Categories.CategoryRepository;
@@ -8,6 +9,9 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,11 +24,13 @@ public class CategoryService {
     @Autowired
     private CategoryRepository repo;
 
-    public List<CategoryDTO> getAllCategories() {
-        List<CategoryEntity> list = repo.findAll();
-        return list.stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public Page<CategoryDTO> getAllCategories(int page, int size) {
+        //Crear páginas con los valores de los parametros
+        Pageable pegeable = PageRequest.of(page, size);
+        //Guardamos los datos en la pagina pegeable
+        Page<CategoryEntity> pageEntity = repo.findAll(pegeable);
+        return pageEntity.map(this::convertirADTO);
+
     }
 
     public CategoryDTO insert(@Valid CategoryDTO jsonData) {

@@ -4,9 +4,13 @@ import IntegracionBackFront.backfront.Exceptions.Category.ExceptionCategoryNotFo
 import IntegracionBackFront.backfront.Exceptions.Category.ExceptionColumnDuplicate;
 import IntegracionBackFront.backfront.Models.DTO.Categories.CategoryDTO;
 import IntegracionBackFront.backfront.Services.Categories.CategoryService;
+import IntegracionBackFront.backfront.Services.Products.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -26,8 +30,31 @@ public class CategoryController {
     private CategoryService service;
 
     @GetMapping("/getDataCategory")
-    private List<CategoryDTO> getData(){
-        return service.getAllCategories();
+    private ResponseEntity<Page<CategoryDTO>> getData(
+            //Parametros en donde se manda la cantidad de paginas inicial y la cantidad de datos que se quieren ver en cada pagina
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "2") int size){
+        //El tamaño de registro minimo tiene que ser 1 y el maximo dependera de nosoytros en este caso sera de 50 registros por pagina
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    //Si esto no se cumple se manda un badrequest de que ha sobrepasado el tamaño
+               "Status", "El tamaño de la pagina debe de estar entre 1 y 50"
+            ));
+            //Y se retorna null es decir no se muestra ningun dato
+            return ResponseEntity.ok(null);
+        }
+        //Si los parametros de size esta entre nuestras medidas entonces se mandan la cantidad de paginas incial y la cantidad de paginas por dato al metodo getAllCategories de nuestro service
+        Page<CategoryDTO> category = service.getAllCategories(page, size);
+        //Si category es null significa que ha ocurrido un error al obtener los datos, por ende se manda un badrequest
+        if (category == null){
+            ResponseEntity.badRequest().body(Map.of(
+               "Status", "Error al obtener los datos"
+            ));
+        }
+        //Si logramos obtener los datos con exito mandamos los datos para que se muestren y una respuiesta ok es decir un respuesta 200
+        return ResponseEntity.ok(category);
+
+
     }
 
     @PostMapping("/newCategory")
